@@ -1,0 +1,17 @@
+[Unit]
+Description=ComfyUI Service
+After=network.target
+
+[Service]
+Type=simple
+User={{USER_NAME}}
+WorkingDirectory={{COMFY_PATH}}
+ExecStart=/bin/bash -lc 'source "{{CONDA_SH}}" && conda activate "{{CONDA_ENV}}" && cd "{{COMFY_PATH}}" && exec python main.py {{COMFY_ARGS}} --port {{COMFY_PORT}}'
+Restart=always
+RestartSec=10
+Environment=HOME=/home/{{USER_NAME}}
+StandardOutput=append:{{LOG_DIR}}/comfyui.log
+StandardError=append:{{LOG_DIR}}/comfyui-error.log
+
+[Install]
+WantedBy=multi-user.target
