@@ -247,14 +247,12 @@ app.get("/", auth, async (req, res) => {
     comfyLink.href = window.location.protocol + "//" + window.location.hostname + ":" + comfyPort;
 
     async function fetchJson(url, options = {}) {
-      const sep = url.includes("?") ? "&" : "?";
       const res = await fetch(url, {
         ...options,
-        headers: {
-          ...(options.headers || {}),
-          "x-panel-token": token || "",
-        },
+        headers: { ...(options.headers || {}), "x-panel-token": token || "" },
       });
+      if (!res.ok) throw new Error(await res.text());
+      return await res.json();
     }
 
     async function action(url) {
