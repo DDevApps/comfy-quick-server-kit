@@ -11,10 +11,11 @@ const os = require("os");
 
 const app = express();
 
-const PANEL_PORT = process.env.PANEL_PORT || 3001;
+const PANEL_PORT = Number(process.env.PANEL_PORT || 3001);
 const PANEL_TOKEN = process.env.PANEL_TOKEN || "change-this-token";
-const COMFY_PORT = process.env.COMFY_PORT || 8188;
-const LOG_DIR = process.env.LOG_DIR || "/tmp/comfy-quick-server-kit-logs";
+const COMFY_PORT = Number(process.env.COMFY_PORT || 8188);
+const LOG_DIR = process.env.LOG_DIR || "/tmp/comfy-server-kit/logs";
+const COMFY_SERVICE_NAME = process.env.COMFY_SERVICE_NAME || "comfyui";
 
 const LOG_FILE = path.join(LOG_DIR, "comfyui.log");
 const ERROR_LOG_FILE = path.join(LOG_DIR, "comfyui-error.log");
@@ -23,10 +24,19 @@ const LOG_ARCHIVE_DIR = path.join(LOG_DIR, "archive");
 app.use(express.json());
 
 function auth(req, res, next) {
-  const token = req.query.token || req.headers["x-panel-token"];
-  if (token !== PANEL_TOKEN) {
+  const token = req.headers["x-panel-token"] || req.query.token;
+
+  if (!token || token !== PANEL_TOKEN) {
     return res.status(401).send("unauthorized");
   }
+
+  // Aviso se usando query string (inseguro)
+  if (req.query.token) {
+    console.warn(
+      "[WARN] Token passed via query string. Prefer the x-panel-token header.",
+    );
+  }
+
   next();
 }
 
@@ -54,7 +64,7 @@ function tailFile(filePath, maxBytes = 120000) {
     fs.closeSync(fd);
     return buffer.toString("utf8");
   } catch (e) {
-    return `Erro lendo log: ${e.message}`;
+    return `Error reading log: ${e.message}`;
   }
 }
 
@@ -64,10 +74,21 @@ function ensureArchiveDir() {
   }
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 app.get("/", auth, async (req, res) => {
+  const comfyUrl = `http://localhost:${COMFY_PORT}`;
+
   res.send(`
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -130,7 +151,6 @@ app.get("/", auth, async (req, res) => {
     }
     .online { background: #065f46; }
     .offline { background: #7f1d1d; }
-    .warn { background: #92400e; }
     .small {
       color: #9ca3af;
       font-size: 12px;
@@ -162,70 +182,79 @@ app.get("/", auth, async (req, res) => {
 <body>
   <div class="container">
     <h1>Comfy Panel</h1>
-    <p class="small">Controle do ComfyUI, logs e recursos do sistema</p>
+    <p class="small">ComfyUI control panel, logs, and system resources</p>
 
     <div class="grid">
       <div class="card">
         <h2>Status</h2>
-        <div id="status">Carregando...</div>
+        <div id="status">Loading...</div>
         <p id="statusMeta" class="small"></p>
         <div class="actions">
-          <button onclick="action('/api/start')">Iniciar</button>
-          <button onclick="action('/api/restart')">Reiniciar</button>
-          <button class="danger" onclick="action('/api/stop')">Parar</button>
-          <button class="gray" onclick="action('/api/clear-logs')">Limpar logs</button>
-          <button class="gray" onclick="action('/api/archive-logs')">Arquivar logs</button>
-          <a class="btn" href="http://SEU_IP:8188" target="_blank">Abrir ComfyUI</a>
+          <button onclick="action('/api/start')">Start</button>
+          <button onclick="action('/api/restart')">Restart</button>
+          <button class="danger" onclick="action('/api/stop')">Stop</button>
+          <button class="gray" onclick="action('/api/clear-logs')">Clear logs</button>
+          <button class="gray" onclick="action('/api/archive-logs')">Archive logs</button>
+          <button class="gray" onclick="action('/api/archive-logs')">Archive logs</button>
+          <button class="gray" onclick="action('/api/update')">Update ComfyUI</button>  ← adicionar aqui
+          <a id="comfyLink" class="btn" href="${escapeHtml(comfyUrl)}" target="_blank">Open ComfyUI</a>
         </div>
       </div>
 
       <div class="card">
-        <h2>Sistema</h2>
-        <div id="system" class="metric">Carregando...</div>
+        <h2>System</h2>
+        <div id="system" class="metric">Loading...</div>
       </div>
     </div>
 
     <div class="grid-3" style="margin-top: 16px;">
       <div class="card">
         <h2>GPU</h2>
-        <div id="gpu" class="metric">Carregando...</div>
+        <div id="gpu" class="metric">Loading...</div>
       </div>
       <div class="card">
-        <h2>Disco</h2>
-        <div id="disk" class="metric">Carregando...</div>
+        <h2>Disk</h2>
+        <div id="disk" class="metric">Loading...</div>
       </div>
       <div class="card">
-        <h2>Processo Comfy</h2>
-        <div id="process" class="metric">Carregando...</div>
+        <h2>Comfy Process</h2>
+        <div id="process" class="metric">Loading...</div>
       </div>
     </div>
 
     <div class="grid" style="margin-top: 16px;">
       <div class="card">
-        <h2>Log ativo</h2>
+        <h2>Active Log</h2>
         <pre id="logActive"></pre>
       </div>
       <div class="card">
-        <h2>Log de erro</h2>
+        <h2>Error Log</h2>
         <pre id="logError"></pre>
       </div>
     </div>
 
     <div class="card" style="margin-top: 16px;">
-      <h2>Histórico de logs</h2>
+      <h2>Log History</h2>
       <ul id="history"></ul>
     </div>
   </div>
 
   <script>
     const token = new URLSearchParams(window.location.search).get("token");
+    const comfyPort = ${COMFY_PORT};
+
+    const comfyLink = document.getElementById("comfyLink");
+    comfyLink.href = window.location.protocol + "//" + window.location.hostname + ":" + comfyPort;
 
     async function fetchJson(url, options = {}) {
       const sep = url.includes("?") ? "&" : "?";
-      const finalUrl = url + sep + "token=" + encodeURIComponent(token);
-      const res = await fetch(finalUrl, options);
-      if (!res.ok) throw new Error(await res.text());
-      return await res.json();
+      const res = await fetch(url, {
+        ...options,
+        headers: {
+          ...(options.headers || {}),
+          "x-panel-token": token || "",
+        },
+      });
     }
 
     async function action(url) {
@@ -234,7 +263,7 @@ app.get("/", auth, async (req, res) => {
         alert(data.message || "ok");
         await loadAll();
       } catch (err) {
-        alert("Erro: " + err.message);
+        alert("Error: " + err.message);
       }
     }
 
@@ -246,7 +275,7 @@ app.get("/", auth, async (req, res) => {
 
       document.getElementById("statusMeta").innerText =
         "Uptime: " + (data.uptime || "-") +
-        " | Porta 8188: " + (data.portOpen ? "respondendo" : "sem resposta");
+        " | Port " + comfyPort + ": " + (data.portOpen ? "responding" : "not responding");
     }
 
     async function loadSystem() {
@@ -254,15 +283,15 @@ app.get("/", auth, async (req, res) => {
       document.getElementById("system").innerHTML =
         "Host: " + data.hostname + "<br>" +
         "Load avg: " + data.loadavg + "<br>" +
-        "RAM usada: " + data.memUsedGb + " GB / " + data.memTotalGb + " GB<br>" +
-        "RAM livre: " + data.memFreeGb + " GB";
+        "Used RAM: " + data.memUsedGb + " GB / " + data.memTotalGb + " GB<br>" +
+        "Free RAM: " + data.memFreeGb + " GB";
     }
 
     async function loadGpu() {
       const data = await fetchJson("/api/gpu");
       document.getElementById("gpu").innerHTML =
         "GPU: " + data.name + "<br>" +
-        "Uso: " + data.util + "%<br>" +
+        "Usage: " + data.util + "%<br>" +
         "VRAM: " + data.memUsed + " MiB / " + data.memTotal + " MiB<br>" +
         "Temp: " + data.temp + " °C<br>" +
         "Fan: " + data.fan + "%<br>" +
@@ -272,17 +301,17 @@ app.get("/", auth, async (req, res) => {
     async function loadDisk() {
       const data = await fetchJson("/api/disk");
       document.getElementById("disk").innerHTML =
-        "Partição: " + data.mount + "<br>" +
-        "Usado: " + data.used + "<br>" +
-        "Livre: " + data.available + "<br>" +
+        "Mount: " + data.mount + "<br>" +
+        "Used: " + data.used + "<br>" +
+        "Available: " + data.available + "<br>" +
         "Total: " + data.size + "<br>" +
-        "Uso: " + data.usePercent;
+        "Usage: " + data.usePercent;
     }
 
     async function loadProcess() {
       const data = await fetchJson("/api/process");
       document.getElementById("process").innerHTML =
-        "PID principal: " + data.pid + "<br>" +
+        "Main PID: " + data.pid + "<br>" +
         "CPU: " + data.cpu + "%<br>" +
         "RAM: " + data.mem + "%<br>" +
         "Threads: " + data.threads;
@@ -315,17 +344,26 @@ app.get("/", auth, async (req, res) => {
       ul.innerHTML = "";
 
       if (!data.files.length) {
-        ul.innerHTML = "<li>Nenhum log arquivado ainda</li>";
+        ul.innerHTML = "<li>No archived logs yet</li>";
         return;
       }
 
+      // Substitua o <a href> por um botão que faz fetch com header
       for (const file of data.files) {
         const li = document.createElement("li");
-        li.innerHTML =
-          '<a class="loglink" target="_blank" href="/api/logs/file/' +
-          encodeURIComponent(file) +
-          '?token=' + encodeURIComponent(token) +
-          '">' + file + '</a>';
+        const btn = document.createElement("button");
+        btn.className = "gray";
+        btn.textContent = file;
+        btn.onclick = async () => {
+          const res = await fetch("/api/logs/file/" + encodeURIComponent(file), {
+            headers: { "x-panel-token": token || "" }
+          });
+         const text = await res.text();
+         const blob = new Blob([text], { type: "text/plain" });
+          const url = URL.createObjectURL(blob);
+          window.open(url, "_blank");
+        };
+        li.appendChild(btn);
         ul.appendChild(li);
       }
     }
@@ -357,13 +395,14 @@ app.get("/", auth, async (req, res) => {
 });
 
 app.get("/api/status", auth, async (req, res) => {
-  const status = await run("systemctl is-active comfyui");
+  const status = await run(`systemctl is-active ${COMFY_SERVICE_NAME}`);
   const uptime = await run(
-    "systemctl show comfyui -p ActiveEnterTimestamp --value",
+    `systemctl show ${COMFY_SERVICE_NAME} -p ActiveEnterTimestamp --value`,
   );
   const port = await run(
-    "bash -lc 'ss -ltn | grep :8188 >/dev/null && echo open || echo closed'",
+    `bash -lc 'ss -ltn | grep :${COMFY_PORT} >/dev/null && echo open || echo closed'`,
   );
+
   res.json({
     active: status.stdout === "active",
     uptime: uptime.stdout || "-",
@@ -433,7 +472,9 @@ app.get("/api/disk", auth, async (req, res) => {
 });
 
 app.get("/api/process", auth, async (req, res) => {
-  const pidResult = await run(`systemctl show comfyui -p MainPID --value`);
+  const pidResult = await run(
+    `systemctl show ${COMFY_SERVICE_NAME} -p MainPID --value`,
+  );
   const pid = pidResult.stdout || "0";
 
   if (!pid || pid === "0") {
@@ -480,7 +521,7 @@ app.get("/api/logs/file/:name", auth, async (req, res) => {
   const target = path.join(LOG_ARCHIVE_DIR, safeName);
 
   if (!fs.existsSync(target)) {
-    return res.status(404).send("arquivo não encontrado");
+    return res.status(404).send("file not found");
   }
 
   res.type("text/plain");
@@ -488,26 +529,26 @@ app.get("/api/logs/file/:name", auth, async (req, res) => {
 });
 
 app.post("/api/start", auth, async (req, res) => {
-  const r = await run("sudo systemctl start comfyui");
+  const r = await run(`sudo systemctl start ${COMFY_SERVICE_NAME}`);
   res.json({
     ok: r.ok,
-    message: r.ok ? "Comfy iniciado" : r.stderr || "erro ao iniciar",
+    message: r.ok ? "Comfy started" : r.stderr || "failed to start Comfy",
   });
 });
 
 app.post("/api/stop", auth, async (req, res) => {
-  const r = await run("sudo systemctl stop comfyui");
+  const r = await run(`sudo systemctl stop ${COMFY_SERVICE_NAME}`);
   res.json({
     ok: r.ok,
-    message: r.ok ? "Comfy parado" : r.stderr || "erro ao parar",
+    message: r.ok ? "Comfy stopped" : r.stderr || "failed to stop Comfy",
   });
 });
 
 app.post("/api/restart", auth, async (req, res) => {
-  const r = await run("sudo systemctl restart comfyui");
+  const r = await run(`sudo systemctl restart ${COMFY_SERVICE_NAME}`);
   res.json({
     ok: r.ok,
-    message: r.ok ? "Comfy reiniciado" : r.stderr || "erro ao reiniciar",
+    message: r.ok ? "Comfy restarted" : r.stderr || "failed to restart Comfy",
   });
 });
 
@@ -515,9 +556,9 @@ app.post("/api/clear-logs", auth, async (req, res) => {
   try {
     fs.writeFileSync(LOG_FILE, "");
     fs.writeFileSync(ERROR_LOG_FILE, "");
-    res.json({ ok: true, message: "Logs limpos" });
+    res.json({ ok: true, message: "Logs cleared" });
   } catch (e) {
-    res.json({ ok: false, message: "Erro ao limpar logs: " + e.message });
+    res.json({ ok: false, message: "Failed to clear logs: " + e.message });
   }
 });
 
@@ -542,12 +583,34 @@ app.post("/api/archive-logs", auth, async (req, res) => {
       fs.writeFileSync(ERROR_LOG_FILE, "");
     }
 
-    res.json({ ok: true, message: "Logs arquivados" });
+    res.json({ ok: true, message: "Logs archived" });
   } catch (e) {
-    res.json({ ok: false, message: "Erro ao arquivar logs: " + e.message });
+    res.json({ ok: false, message: "Failed to archive logs: " + e.message });
   }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("Painel rodando na porta " + PORT);
+app.post("/api/update", auth, async (req, res) => {
+  const scriptPath = path.join(__dirname, "..", "scripts", "update-comfyui.sh");
+
+  if (!fs.existsSync(scriptPath)) {
+    return res.json({ ok: false, message: "update-comfyui.sh not found" });
+  }
+
+  // Roda em background — não espera terminar
+  exec(`bash "${scriptPath}"`, (err, stdout, stderr) => {
+    if (err) {
+      console.error("[update] failed:", stderr);
+    } else {
+      console.log("[update] done:", stdout);
+    }
+  });
+
+  res.json({
+    ok: true,
+    message: "Update started. ComfyUI will restart when done.",
+  });
+});
+
+app.listen(PANEL_PORT, "0.0.0.0", () => {
+  console.log(`Panel running on port ${PANEL_PORT}`);
 });

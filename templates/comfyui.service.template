@@ -1,12 +1,13 @@
 [Unit]
 Description=ComfyUI Service
 After=network.target
+OnFailure={{COMFY_SERVICE_NAME}}-notify.service
 
 [Service]
 Type=simple
 User={{USER_NAME}}
 WorkingDirectory={{COMFY_PATH}}
-ExecStart=/bin/bash -lc 'source "{{CONDA_SH}}" && conda activate "{{CONDA_ENV}}" && cd "{{COMFY_PATH}}" && exec python main.py {{COMFY_ARGS}} --port {{COMFY_PORT}}'
+ExecStart={{PROJECT_ROOT}}/scripts/start-comfyui.sh
 Restart=always
 RestartSec=10
 Environment=HOME=/home/{{USER_NAME}}

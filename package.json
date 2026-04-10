@@ -1,15 +1,11 @@
 {
   "name": "comfy-quick-server-kit",
   "version": "1.0.0",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "description": "Lightweight control panel for ComfyUI servers",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "install-kit": "bash install.sh",
+    "update-kit": "bash update.sh",
+    "doctor": "bash doctor.sh"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": ""
+  "private": true
 }

@@ -1,362 +1,295 @@
 <div align="center">
 
-# Comfy Quick Server Kit
+<br>
 
-### Lightweight Linux service manager for ComfyUI — built for Ubuntu, remote GPU servers, and local AI machines.
+```
+ ██████╗ ██████╗ ███████╗██╗  ██╗    ███████╗███████╗██████╗ ██╗   ██╗███████╗██████╗
+██╔═══██╗██╔══██╗██╔════╝██║ ██╔╝    ██╔════╝██╔════╝██╔══██╗██║   ██║██╔════╝██╔══██╗
+██║   ██║██████╔╝███████╗█████╔╝     ███████╗█████╗  ██████╔╝██║   ██║█████╗  ██████╔╝
+██║▄▄ ██║██╔══██╗╚════██║██╔═██╗     ╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝██╔══╝  ██╔══██╗
+╚██████╔╝██║  ██║███████║██║  ██╗    ███████║███████╗██║  ██║ ╚████╔╝ ███████╗██║  ██║
+ ╚══▀▀═╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝
+```
+
+### Lightweight Linux service manager for ComfyUI
+
+**systemd · PM2 · Node.js · Bash · No Docker. No bloat. Just works.**
 
 <br>
 
-Running ComfyUI on Linux is easy at first — until you want it to behave like a real service.
-
-You want it to start reliably, survive reboots, expose useful logs, show GPU usage, and be manageable remotely without turning your machine into a DevOps project. Most setups end up as scattered shell commands, half-finished scripts, or heavyweight dashboards that solve the wrong problem.
-
-**Comfy Quick Server Kit** takes a simpler approach: **run ComfyUI as a proper Linux service, keep the control panel lightweight, and make installation practical for real users.**
-
-It uses **systemd** for ComfyUI, **PM2** for the Node.js panel, and a small web UI for the actions that matter: start, stop, restart, logs, GPU stats, and system status. No Docker required. No heavy frontend required. No unnecessary infrastructure.
-
-Built for people who run ComfyUI on:
-
-- local dedicated generation PCs
-- home Ubuntu workstations
-- rented GPU servers
-- cloud GPU instances
-- remote Linux boxes accessed from another machine
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Platform](https://img.shields.io/badge/platform-Ubuntu%20%2F%20Linux-orange)
+![Node](https://img.shields.io/badge/node-%3E%3D18-green)
+![Status](https://img.shields.io/badge/status-active-brightgreen)
 
 <br>
 
-[Quick Start](#quick-start) · [Features](#features) · [Requirements](#requirements) · [Configuration](#configuration) · [Troubleshooting](#troubleshooting) · [Roadmap](#roadmap)
+[Quick Start](#-quick-start) · [Features](#-features) · [Configuration](#-configuration) · [Notifications](#-notifications) · [Updating ComfyUI](#-updating-comfyui) · [Troubleshooting](#-troubleshooting)
 
 </div>
 
 ---
 
-## What it does
+## The problem
 
-Comfy Quick Server Kit is designed to solve one specific problem well:
+Running ComfyUI on Linux is easy at first — until you want it to behave like a real service.
 
-**manage a single ComfyUI installation on Linux with a simple, low-overhead control panel.**
+You want it to **start on boot**, **survive crashes**, **expose clean logs**, **show GPU stats remotely**, and be controllable without SSHing in every time. Most setups end up as scattered shell commands, tmux sessions, or heavyweight dashboards that solve the wrong problem.
 
-### Core features
+**Comfy Quick Server Kit** takes a simpler approach:
 
-- Run ComfyUI with `systemd`
-- Run the panel with `PM2`
-- Start / stop / restart ComfyUI from the browser
-- Check service status
-- View recent logs and live logs
-- Monitor GPU usage, VRAM, and temperature
-- Monitor CPU, RAM, load, and disk usage
-- Use a simple `.env`-based configuration
-- Install with a beginner-friendly shell script
-- Keep everything lightweight and Linux-first
+> Run ComfyUI as a proper Linux service. Keep the control panel lightweight. Make installation practical for real users.
+
+No Docker. No Kubernetes. No Prometheus stack. Just systemd, PM2, Express, and Bash.
 
 ---
 
-## What it does not do
+## ✨ Features
 
-This project is intentionally small and focused.
+### 🖥️ Control Panel
 
-It is **not**:
+- Start / Stop / Restart ComfyUI from the browser
+- Live service status with uptime display
+- One-click **Update ComfyUI** (git pull + pip sync + auto-restart)
+- Direct link to open ComfyUI interface
 
-- a full ComfyUI installer
-- a Docker orchestration platform
-- a reverse proxy / SSL manager
-- a multi-user admin system
-- a Kubernetes-style deployment tool
-- a full observability stack
+### 📊 Monitoring
 
-If you want a practical single-machine ComfyUI manager, this is the point.
+| Metric  | Details                                                            |
+| ------- | ------------------------------------------------------------------ |
+| GPU     | Name, usage %, VRAM used/total, temperature, fan speed, power draw |
+| CPU     | Load average (1 / 5 / 15 min)                                      |
+| RAM     | Used / Free / Total in GB                                          |
+| Disk    | Used, available, total, usage %                                    |
+| Process | PID, CPU %, RAM %, thread count                                    |
 
----
+### 📋 Logs
 
-## Why this project exists
+- Live active log (auto-scrolls, refreshes every second)
+- Separate error log viewer
+- Archive logs with timestamp
+- Browse archived logs directly from the panel
+- Clear logs with one click
 
-A lot of ComfyUI users end up in the same situation:
+### 🔔 Notifications
 
-- ComfyUI works, but only when launched manually
-- logs are messy or disappear
-- remote access is awkward
-- after a reboot, things do not come back cleanly
-- GPU usage is hidden unless you SSH in and run commands
-- small panel ideas become bloated dashboards
+- **Telegram** — get a message when ComfyUI crashes or updates
+- **Discord** — same via webhook
+- Both can be active simultaneously
+- Triggered automatically by systemd on service failure
 
-This project exists to keep the solution boring, fast, and useful:
+### ⚙️ Installation
 
-- **systemd** handles the Python service
-- **PM2** keeps the panel alive
-- **Bash scripts** handle service actions and checks
-- **Node.js + Express** exposes a small web interface
-- **dotenv** keeps config centralized and editable
-
-That is the whole philosophy.
-
----
-
-## Features
-
-### Service management
-
-- Start ComfyUI
-- Stop ComfyUI
-- Restart ComfyUI
-- Check whether the service is running
-- Keep ComfyUI managed as a real Linux service
-
-### Monitoring
-
-- GPU usage
-- VRAM usage
-- GPU temperature
-- CPU usage / load
-- RAM usage
-- Disk usage
-- system health checks
-
-### Logs
-
-- View recent logs
-- View live logs
-- Separate service logging from panel process management
-- Keep logs accessible without digging through random terminal sessions
-
-### Deployment style
-
-- Linux-first
-- Ubuntu-focused
-- friendly to remote GPU servers
-- simple install flow
-- no heavy dependencies
-- no complex frontend framework
+- Interactive installer — asks if you already have ComfyUI or want it installed
+- Optionally clones ComfyUI, creates conda env, installs PyTorch + requirements
+- Generates the systemd service from a template — no manual editing
+- `doctor.sh` diagnoses your setup in seconds
 
 ---
 
-## Intended use
-
-Comfy Quick Server Kit is designed for:
-
-- Ubuntu-based ComfyUI servers
-- remote GPU machines
-- cloud GPU instances
-- local dedicated AI generation machines
-- users who want a simple panel instead of a full server stack
-
----
-
-## Stack
-
-- Node.js
-- Express
-- PM2
-- systemd
-- Bash
-- dotenv
-
----
-
-## Requirements
-
-Before installing, you should already have:
+## 📋 Requirements
 
 - Ubuntu or Ubuntu-based Linux
-- ComfyUI already installed
-- a working Python environment for ComfyUI
-- Node.js installed
-- PM2 installed or available to install
-- NVIDIA drivers installed if you want GPU monitoring
-- `nvidia-smi` available if you want GPU monitoring
+- Node.js ≥ 18
+- Conda / Miniconda (for the Python environment)
+- NVIDIA GPU + drivers + `nvidia-smi` (for GPU monitoring)
+- `git` (required if installing ComfyUI via the kit)
+- `curl` (required for notifications)
 
-### Important note
-
-This project is meant to **manage** ComfyUI, not install every dependency from zero.
-
-That means v1.0 assumes:
-
-- your Linux machine already works
-- your GPU drivers already work
-- ComfyUI already runs manually
-- your Python environment is already valid
+> PM2 is installed automatically by the installer if not present.
 
 ---
 
-## Quick Start
-
-Clone the repository:
+## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/comfy-quick-server-kit.git
+git clone https://github.com/DDevApps/comfy-quick-server-kit.git
 cd comfy-quick-server-kit
-```
-
-Copy the example environment file:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your real system paths and configuration.
-
-Run the installer:
-
-```bash
 bash install.sh
 ```
 
-Run diagnostics:
+The installer will guide you through everything interactively:
+
+```
+== Comfy Quick Server Kit Installer ==
+
+Linux username: myuser
+Conda environment name [comfy]:
+conda.sh path: /home/myuser/miniconda3/etc/profile.d/conda.sh
+ComfyUI port [8188]:
+Panel port [3001]:
+Panel token: my-secret-token
+Log directory [/home/myuser/logs]:
+
+Do you already have ComfyUI installed?
+1) Yes, I have it installed
+2) No, install it for me
+
+Notification setup (press Enter to skip):
+  Telegram bot token:
+  Telegram chat ID:
+  Discord webhook URL:
+```
+
+After installation:
+
+```
+Panel URL:   http://YOUR_SERVER_IP:3001/?token=YOUR_TOKEN
+ComfyUI URL: http://YOUR_SERVER_IP:8188
+```
+
+Run diagnostics at any time:
 
 ```bash
 bash doctor.sh
 ```
 
-After installation, open the panel in your browser:
-
-```text
-http://YOUR_SERVER_IP:3001/?token=YOUR_PANEL_TOKEN
-```
-
-If ComfyUI is configured on port `8188`, it will be available at:
-
-```text
-http://YOUR_SERVER_IP:8188
-```
-
 ---
 
-## Configuration
+## ⚙️ Configuration
 
-Configuration is handled through a simple `.env` file.
-
-### Example `.env`
+All configuration lives in a single `.env` file at the project root.
 
 ```env
+# System
 USER_NAME=your-user
 COMFY_PATH=/home/your-user/ComfyUI
 CONDA_SH=/home/your-user/miniconda3/etc/profile.d/conda.sh
 CONDA_ENV=comfy
 
+# Ports
 COMFY_PORT=8188
 PANEL_PORT=3001
+
+# Security
 PANEL_TOKEN=change-this-token
 
+# Logs
 LOG_DIR=/home/your-user/logs
 
+# ComfyUI launch arguments
 COMFY_ARGS=--listen --lowvram --cache-none --reserve-vram 6 --preview-method none
+
+# Service name (change if running multiple instances)
+COMFY_SERVICE_NAME=comfyui
+
+# Notifications (optional — leave blank to disable)
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+DISCORD_WEBHOOK_URL=
 ```
 
 ### Variable reference
 
-- `USER_NAME` → Linux user that owns and runs ComfyUI
-- `COMFY_PATH` → path to your ComfyUI folder
-- `CONDA_SH` → path to the `conda.sh` activation script
-- `CONDA_ENV` → Conda environment name used by ComfyUI
-- `COMFY_PORT` → ComfyUI port
-- `PANEL_PORT` → panel port
-- `PANEL_TOKEN` → access token for the panel
-- `LOG_DIR` → directory where logs are stored
-- `COMFY_ARGS` → extra arguments passed to ComfyUI
-
-### Configuration philosophy
-
-The goal is to keep configuration:
-
-- explicit
-- readable
-- easy to edit
-- beginner-friendly
-- free from hardcoded paths
+| Variable              | Description                               |
+| --------------------- | ----------------------------------------- |
+| `USER_NAME`           | Linux user that owns and runs ComfyUI     |
+| `COMFY_PATH`          | Full path to the ComfyUI folder           |
+| `CONDA_SH`            | Path to `conda.sh` activation script      |
+| `CONDA_ENV`           | Conda environment name for ComfyUI        |
+| `COMFY_PORT`          | Port ComfyUI listens on                   |
+| `PANEL_PORT`          | Port the control panel listens on         |
+| `PANEL_TOKEN`         | Secret token to access the panel          |
+| `LOG_DIR`             | Directory where logs are stored           |
+| `COMFY_ARGS`          | Arguments passed to `python main.py`      |
+| `COMFY_SERVICE_NAME`  | systemd service name (default: `comfyui`) |
+| `TELEGRAM_BOT_TOKEN`  | Telegram bot token (optional)             |
+| `TELEGRAM_CHAT_ID`    | Telegram chat/user ID (optional)          |
+| `DISCORD_WEBHOOK_URL` | Discord webhook URL (optional)            |
 
 ---
 
-## Project Structure
+## 🔔 Notifications
 
-```text
+Comfy Quick Server Kit can send notifications to **Telegram**, **Discord**, or both.
+
+Notifications are sent when:
+
+- ⚠️ ComfyUI **crashes** (via systemd `OnFailure`)
+- ✅ ComfyUI **updates** successfully (via `update-comfyui.sh`)
+
+### Setting up Telegram
+
+1. Talk to [@BotFather](https://t.me/BotFather) on Telegram and create a bot — you'll get a token like `123456:ABC-DEF...`
+2. Send any message to your bot, then open:
+   ```
+   https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates
+   ```
+3. Find your `chat.id` in the response
+4. Add both values to `.env`:
+   ```env
+   TELEGRAM_BOT_TOKEN=123456:ABC-DEF...
+   TELEGRAM_CHAT_ID=987654321
+   ```
+
+### Setting up Discord
+
+1. In your Discord server, go to **Server Settings → Integrations → Webhooks**
+2. Create a new webhook and copy the URL
+3. Add it to `.env`:
+   ```env
+   DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+   ```
+
+Both platforms can be active at the same time. Leave either blank to disable it.
+
+---
+
+## 🔄 Updating ComfyUI
+
+From the panel, click **Update ComfyUI**. The kit will:
+
+1. Stop the ComfyUI service
+2. Run `git pull origin main` in the ComfyUI directory
+3. If new commits are found — reinstall requirements with `pip install -r requirements.txt`
+4. Send a notification with the commit hash range (e.g. `a1b2c3d → e4f5g6h`)
+5. Restart the service
+
+You can also run it from the terminal:
+
+```bash
+bash scripts/update-comfyui.sh
+```
+
+> If ComfyUI is already up to date, it will restart the service and exit cleanly without touching pip.
+
+---
+
+## 🗂️ Project Structure
+
+```
 comfy-quick-server-kit/
 ├── panel/
 │   ├── package.json
-│   └── server.js
+│   └── server.js            ← Express server + embedded panel UI
 ├── scripts/
+│   ├── helpers.sh           ← shared functions (log, notify, load_env...)
+│   ├── start-comfyui.sh     ← called by systemd to launch ComfyUI
+│   ├── install-comfyui.sh   ← optional: clones + sets up ComfyUI from scratch
+│   ├── update-comfyui.sh    ← git pull + pip sync + restart
+│   ├── notify-crash.sh      ← called by systemd on service failure
+│   ├── setup-service.sh     ← installs the systemd service
+│   ├── setup-pm2.sh         ← sets up PM2 for the panel
+│   ├── setup-logs.sh        ← creates log directories
+│   ├── setup-node.sh        ← node/npm check helper
+│   └── archive-logs.sh      ← archives current logs with timestamp
 ├── templates/
-│   └── comfyui.service.template
+│   ├── comfyui.service.template         ← systemd service template
+│   └── comfyui-notify.service.template  ← crash notifier service template
 ├── docs/
-├── logs/
 ├── .env.example
-├── install.sh
-├── doctor.sh
-├── update.sh
-├── uninstall.sh
+├── install.sh               ← interactive installer
+├── doctor.sh                ← diagnostics
+├── update.sh                ← updates panel dependencies + restarts
+├── uninstall.sh             ← removes service, PM2 process, optionally logs
 └── README.md
 ```
 
-### Structure overview
-
-- `panel/` → Node.js control panel
-- `scripts/` → helper scripts for service control, diagnostics, metrics, and logs
-- `templates/` → service templates such as `comfyui.service`
-- `docs/` → additional project documentation
-- `logs/` → log storage location if used locally in repo-based setups
-- `install.sh` → installation script
-- `doctor.sh` → diagnostics script
-- `update.sh` → update helper
-- `uninstall.sh` → uninstall helper
-
 ---
 
-## Service Design
+## 🔧 Useful Commands
 
-This project intentionally separates responsibilities.
-
-### ComfyUI → `systemd`
-
-`systemd` is responsible for:
-
-- starting ComfyUI
-- restarting it on failure
-- handling boot persistence
-- exposing service status
-- integrating with normal Linux service flows
-
-### Panel → `PM2`
-
-`PM2` is responsible for:
-
-- keeping the Node.js panel alive
-- restarting the panel if it crashes
-- making panel startup easier on reboot
-
-### Why this split matters
-
-This avoids mixing concerns.
-
-The Python service stays a normal Linux service.  
-The panel stays a lightweight Node process.  
-Each part can be restarted or updated independently.
-
-That is exactly what you want on a real Linux machine.
-
----
-
-## Security Note
-
-The built-in token system is intentionally simple.
-
-It should be treated as **basic access protection for private or self-hosted use**, not as full hardened authentication.
-
-If you expose the panel to the public internet, it is strongly recommended to place it behind at least one of the following:
-
-- a reverse proxy
-- firewall restrictions
-- IP allowlisting
-- a private tunnel
-- additional authentication
-
-### Important
-
-Do not treat `?token=...` as enterprise-grade security.  
-For v1.0, it is a practical private-server solution.
-
----
-
-## Useful Commands
-
-### ComfyUI
+### ComfyUI service
 
 ```bash
 sudo systemctl start comfyui
@@ -366,7 +299,7 @@ sudo systemctl status comfyui
 journalctl -u comfyui -f
 ```
 
-### Panel
+### Panel (PM2)
 
 ```bash
 pm2 list
@@ -375,143 +308,195 @@ pm2 logs comfy-panel
 pm2 save
 ```
 
-### Diagnostics
+### Kit scripts
 
 ```bash
-bash doctor.sh
+bash doctor.sh                      # full diagnostic check
+bash update.sh                      # update panel deps + restart
+bash uninstall.sh                   # remove service + panel
+bash scripts/update-comfyui.sh      # git pull + restart ComfyUI
+bash scripts/archive-logs.sh        # archive current logs manually
 ```
 
 ---
 
-## Troubleshooting
+## 🛡️ Security
 
-### Panel shows unauthorized
+The panel is protected by a token sent as an HTTP header (`x-panel-token`). It is designed for **private self-hosted use**.
 
-Make sure you are opening the panel with the correct token:
+If you expose the panel to the public internet, place it behind at least one of:
 
-```text
-http://YOUR_SERVER_IP:3001/?token=YOUR_PANEL_TOKEN
+- a reverse proxy (nginx, Caddy)
+- firewall rules or IP allowlisting
+- a private tunnel (Tailscale, WireGuard, Cloudflare Access)
+
+**Important:** add passwordless sudo for systemctl to allow panel buttons to work:
+
+```bash
+sudo visudo
 ```
 
-Also verify that `PANEL_TOKEN` in `.env` matches the value expected by the panel.
+Add this line (adjust service name if needed):
 
----
-
-### Logs do not update
-
-Check that `LOG_DIR` in `.env` matches the actual log output path used by the ComfyUI service.
-
-Also verify that:
-
-- the directory exists
-- the service can write to it
-- the panel is reading from the same location
-
----
-
-### Buttons do not start / stop / restart ComfyUI
-
-If the panel triggers `sudo systemctl`, you may need passwordless access for specific commands using `sudo visudo`.
-
-Example:
-
-```text
+```
 your-user ALL=(ALL) NOPASSWD: /bin/systemctl start comfyui, /bin/systemctl stop comfyui, /bin/systemctl restart comfyui
 ```
 
-Adjust the service name if your installation uses a different one.
+---
+
+## 🩺 Troubleshooting
+
+### Panel shows "unauthorized"
+
+Check that the token in the URL matches `PANEL_TOKEN` in `.env`:
+
+```
+http://YOUR_IP:3001/?token=YOUR_TOKEN
+```
 
 ---
 
-### `nvidia-smi` is missing
+### Buttons don't start / stop / restart ComfyUI
 
-GPU monitoring depends on NVIDIA drivers and `nvidia-smi`.
-
-Install the drivers correctly before expecting GPU metrics to work.
+The panel calls `sudo systemctl`. You need the passwordless sudo rule above.
 
 ---
 
 ### ComfyUI works manually but not as a service
 
-Usually this means one of these is wrong:
+Usually one of these is wrong:
 
-- `COMFY_PATH`
-- `CONDA_SH`
-- `CONDA_ENV`
+- `COMFY_PATH` — does the directory actually exist?
+- `CONDA_SH` — is the path to `conda.sh` correct?
+- `CONDA_ENV` — does the environment exist?
 - service user permissions
-- working directory in the generated service file
 
-Run:
+Run diagnostics:
 
 ```bash
 bash doctor.sh
-```
-
-Then check:
-
-```bash
-sudo systemctl status comfyui
 journalctl -u comfyui -n 100 --no-pager
 ```
 
 ---
 
-## Roadmap
+### Logs don't update
 
-### v1.0
-
-- install script
-- diagnostics script
-- ComfyUI service template
-- lightweight control panel
-- start / stop / restart actions
-- recent logs and live logs
-- GPU metrics
-- basic system metrics
-
-### Later versions
-
-- better authentication
-- improved update and uninstall flow
-- optional reverse proxy guides
-- improved log filtering
-- support for more advanced service layouts
-- optional multi-instance support
+Make sure `LOG_DIR` in `.env` matches the path in your service file. Run `doctor.sh` to check.
 
 ---
 
-## Design Goals
+### GPU shows N/A
 
-This project is guided by a few simple rules:
+`nvidia-smi` must be installed and accessible. Test it:
 
-### 1. Keep it lightweight
+```bash
+nvidia-smi
+```
 
-No heavy frontend.  
-No unnecessary daemons.  
-No Docker requirement.  
-No “platform” complexity.
+If it fails, your drivers aren't installed or the binary isn't in `PATH`.
 
-### 2. Keep it practical
+---
 
-This should help real users on real GPU machines, not just look good in screenshots.
+### Notifications not arriving
 
-### 3. Keep it understandable
+Test Telegram manually:
 
-A beginner should be able to inspect the stack and understand what is happening:
+```bash
+curl -s -X POST "https://api.telegram.org/bot<TOKEN>/sendMessage" \
+  -d chat_id="<CHAT_ID>" \
+  -d text="test"
+```
 
-- ComfyUI is a `systemd` service
-- panel is a `PM2` app
-- configuration is in `.env`
-- diagnostics are in `doctor.sh`
+Test Discord manually:
 
-### 4. Do not impact ComfyUI performance
+```bash
+curl -s -X POST "<WEBHOOK_URL>" \
+  -H "Content-Type: application/json" \
+  -d '{"content": "test"}'
+```
 
-The kit should help manage the machine, not compete with the workload.
+---
+
+## 🗺️ Roadmap
+
+**v1.0 — done**
+
+- [x] Interactive installer with optional ComfyUI installation
+- [x] systemd service with crash recovery
+- [x] PM2 panel process management
+- [x] Start / Stop / Restart / Update from browser
+- [x] Live logs + error log viewer + log archiving
+- [x] GPU, CPU, RAM, disk, process monitoring
+- [x] Telegram + Discord crash + update notifications
+- [x] `doctor.sh` diagnostics
+- [x] Secure token auth via HTTP header
+
+**Later versions**
+
+- [ ] Reverse proxy setup guide (nginx / Caddy)
+- [ ] Custom ComfyUI branch/tag for updates
+- [ ] Notification for successful service start (optional)
+- [ ] Multi-instance support
+- [ ] Log filtering by keyword in the panel
+- [ ] Dark/light panel theme toggle
+
+---
+
+## 🏗️ Architecture
+
+```
+Browser
+   │
+   ▼
+PM2 → panel/server.js (Express, port 3001)
+         │
+         ├── GET  /              → serves the panel HTML
+         ├── GET  /api/status    → systemctl is-active
+         ├── GET  /api/system    → os module (RAM, load)
+         ├── GET  /api/gpu       → nvidia-smi
+         ├── GET  /api/disk      → df
+         ├── GET  /api/process   → ps
+         ├── GET  /api/logs/*    → reads log files
+         ├── POST /api/start     → systemctl start
+         ├── POST /api/stop      → systemctl stop
+         ├── POST /api/restart   → systemctl restart
+         ├── POST /api/update    → runs update-comfyui.sh
+         └── POST /api/*-logs    → archive / clear logs
+
+systemd → comfyui.service
+              │
+              ├── ExecStart → scripts/start-comfyui.sh
+              │                   (conda activate + python main.py)
+              ├── Restart=always
+              └── OnFailure → comfyui-notify.service
+                                   (runs notify-crash.sh → Telegram/Discord)
+```
+
+---
+
+## Stack
+
+| Layer          | Technology                             |
+| -------------- | -------------------------------------- |
+| Python service | systemd                                |
+| Panel process  | PM2                                    |
+| Panel server   | Node.js + Express                      |
+| Configuration  | dotenv                                 |
+| Scripts        | Bash                                   |
+| Notifications  | curl (Telegram API + Discord Webhooks) |
 
 ---
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE)
 
 ---
+
+<div align="center">
+
+Made with care for everyone who just wants ComfyUI to work properly on Linux.<br>
+If this saved you time, a ⭐ on GitHub goes a long way.
+
+</div>
