@@ -3,12 +3,12 @@
 <br>
 
 ```
- ██████╗ ██████╗ ███████╗██╗  ██╗    ███████╗███████╗██████╗ ██╗   ██╗███████╗██████╗
-██╔═══██╗██╔══██╗██╔════╝██║ ██╔╝    ██╔════╝██╔════╝██╔══██╗██║   ██║██╔════╝██╔══██╗
-██║   ██║██████╔╝███████╗█████╔╝     ███████╗█████╗  ██████╔╝██║   ██║█████╗  ██████╔╝
-██║▄▄ ██║██╔══██╗╚════██║██╔═██╗     ╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝██╔══╝  ██╔══██╗
-╚██████╔╝██║  ██║███████║██║  ██╗    ███████║███████╗██║  ██║ ╚████╔╝ ███████╗██║  ██║
- ╚══▀▀═╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝
+  ██████╗ ██████╗ ███╗   ███╗███████╗██╗   ██╗    ██╗  ██╗██╗████████╗
+ ██╔════╝██╔═══██╗████╗ ████║██╔════╝╚██╗ ██╔╝    ██║ ██╔╝██║╚══██╔══╝
+ ██║     ██║   ██║██╔████╔██║█████╗   ╚████╔╝     █████╔╝ ██║   ██║
+ ██║     ██║   ██║██║╚██╔╝██║██╔══╝    ╚██╔╝      ██╔═██╗ ██║   ██║
+ ╚██████╗╚██████╔╝██║ ╚═╝ ██║██║        ██║       ██║  ██╗██║   ██║
+  ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝        ╚═╝       ╚═╝  ╚═╝╚═╝   ╚═╝
 ```
 
 ### Lightweight Linux service manager for ComfyUI
@@ -17,10 +17,11 @@
 
 <br>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Platform](https://img.shields.io/badge/platform-Ubuntu%20%2F%20Linux-orange)
-![Node](https://img.shields.io/badge/node-%3E%3D18-green)
-![Status](https://img.shields.io/badge/status-active-brightgreen)
+[![License: MIT](https://img.shields.io/badge/License-MIT-222?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
+[![Platform](https://img.shields.io/badge/Ubuntu%20%2F%20Linux-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)]()
+[![Node](https://img.shields.io/badge/Node.js%20%E2%89%A518-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)]()
+[![Made by DDevApps](https://img.shields.io/badge/made%20by-DDevApps-6366f1?style=for-the-badge&logo=github&logoColor=white)](https://github.com/DDevApps)
+[![Stars](https://img.shields.io/github/stars/DDevApps/comfy-quick-server-kit?style=for-the-badge&color=f59e0b&logo=github&logoColor=white)](https://github.com/DDevApps/comfy-quick-server-kit/stargazers)
 
 <br>
 
@@ -496,7 +497,6 @@ MIT — see [LICENSE](LICENSE)
 
 <div align="center">
 
-Made with care for everyone who just wants ComfyUI to work properly on Linux.<br>
-If this saved you time, a ⭐ on GitHub goes a long way.
+Built by [DDevApps](https://github.com/DDevApps) · If this saved you time, a ⭐ on GitHub goes a long way.
 
 </div>
