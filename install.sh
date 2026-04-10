@@ -138,7 +138,7 @@ sed -i "s|{{CONDA_ENV}}|$CONDA_ENV|g" "$TMP_SERVICE"
 sed -i "s|{{COMFY_PORT}}|$COMFY_PORT|g" "$TMP_SERVICE"
 sed -i "s|{{LOG_DIR}}|$LOG_DIR|g" "$TMP_SERVICE"
 sed -i "s|{{COMFY_ARGS}}|$COMFY_ARGS|g" "$TMP_SERVICE"
-sed -i "s|{{PROJECT_ROOT}}|$PROJECT_DIR|g" "$TMP_SERVICE"   # <-- adicionar
+sed -i "s|{{PROJECT_ROOT}}|$PROJECT_DIR|g" "$TMP_SERVICE" 
 
 sudo cp "$TMP_SERVICE" "$SERVICE_FILE"
 rm -f "$TMP_SERVICE"

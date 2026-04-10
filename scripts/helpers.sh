@@ -51,10 +51,10 @@ replace_template() {
   content="${content//\{\{COMFY_PATH\}\}/${COMFY_PATH}}"
   content="${content//\{\{LOG_DIR\}\}/${LOG_DIR}}"
   content="${content//\{\{COMFY_SERVICE_NAME\}\}/${COMFY_SERVICE_NAME}}"
-  content="${content//\{\{CONDA_SH\}\}/${CONDA_SH}}"        # <-- adicionar
-  content="${content//\{\{CONDA_ENV\}\}/${CONDA_ENV}}"       # <-- adicionar
-  content="${content//\{\{COMFY_PORT\}\}/${COMFY_PORT}}"     # <-- adicionar
-  content="${content//\{\{COMFY_ARGS\}\}/${COMFY_ARGS:-}}"   # <-- adicionar
+  content="${content//\{\{CONDA_SH\}\}/${CONDA_SH}}"       
+  content="${content//\{\{CONDA_ENV\}\}/${CONDA_ENV}}"     
+  content="${content//\{\{COMFY_PORT\}\}/${COMFY_PORT}}"    
+  content="${content//\{\{COMFY_ARGS\}\}/${COMFY_ARGS:-}}"   
 
   printf '%s\n' "${content}" > "${output_file}"
 }

@@ -195,8 +195,7 @@ app.get("/", auth, async (req, res) => {
           <button class="danger" onclick="action('/api/stop')">Stop</button>
           <button class="gray" onclick="action('/api/clear-logs')">Clear logs</button>
           <button class="gray" onclick="action('/api/archive-logs')">Archive logs</button>
-          <button class="gray" onclick="action('/api/archive-logs')">Archive logs</button>
-          <button class="gray" onclick="action('/api/update')">Update ComfyUI</button>  ← adicionar aqui
+          <button class="gray" onclick="action('/api/update')">Update ComfyUI</button> 
           <a id="comfyLink" class="btn" href="${escapeHtml(comfyUrl)}" target="_blank">Open ComfyUI</a>
         </div>
       </div>
