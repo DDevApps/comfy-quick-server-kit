@@ -32,6 +32,8 @@ if [[ ! -f "$ENV_FILE" ]]; then
   echo
 
 
+  USER_NAME="${USER_NAME:-}"
+
   while [[ -z "${USER_NAME// }" ]]; do
     echo "[ERROR] Linux username cannot be empty."
     read -rp "Linux username: " USER_NAME
