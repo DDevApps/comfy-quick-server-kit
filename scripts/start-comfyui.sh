@@ -9,7 +9,6 @@ ENV_FILE="${PROJECT_ROOT}/.env"
   exit 1
 }
 
-# shellcheck disable=SC1090
 set -a
 source "${ENV_FILE}"
 set +a
@@ -36,7 +35,4 @@ cd "${COMFY_PATH}"
 
 : "${COMFY_ARGS:---listen 0.0.0.0 --lowvram --cache-none --reserve-vram 6 --preview-method none}"
 
-# shellcheck disable=SC2086
-exec python main.py \
-  --port "${COMFY_PORT}" \
-  $COMFY_ARGS
+exec bash -lc "python main.py --port '${COMFY_PORT}' ${COMFY_ARGS}"

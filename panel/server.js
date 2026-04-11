@@ -30,7 +30,6 @@ function auth(req, res, next) {
     return res.status(401).send("unauthorized");
   }
 
-  // Aviso se usando query string (inseguro)
   if (req.query.token) {
     console.warn(
       "[WARN] Token passed via query string. Prefer the x-panel-token header.",
@@ -167,7 +166,6 @@ app.get("/", auth, async (req, res) => {
       margin: 0;
     }
     ul { padding-left: 18px; }
-    a.loglink { color: #93c5fd; }
     .metric {
       font-size: 14px;
       line-height: 1.8;
@@ -195,7 +193,7 @@ app.get("/", auth, async (req, res) => {
           <button class="danger" onclick="action('/api/stop')">Stop</button>
           <button class="gray" onclick="action('/api/clear-logs')">Clear logs</button>
           <button class="gray" onclick="action('/api/archive-logs')">Archive logs</button>
-          <button class="gray" onclick="action('/api/update')">Update ComfyUI</button> 
+          <button class="gray" onclick="action('/api/update')">Update ComfyUI</button>
           <a id="comfyLink" class="btn" href="${escapeHtml(comfyUrl)}" target="_blank">Open ComfyUI</a>
         </div>
       </div>
@@ -345,7 +343,6 @@ app.get("/", auth, async (req, res) => {
         return;
       }
 
-      // Substitua o <a href> por um botão que faz fetch com header
       for (const file of data.files) {
         const li = document.createElement("li");
         const btn = document.createElement("button");
@@ -355,8 +352,8 @@ app.get("/", auth, async (req, res) => {
           const res = await fetch("/api/logs/file/" + encodeURIComponent(file), {
             headers: { "x-panel-token": token || "" }
           });
-         const text = await res.text();
-         const blob = new Blob([text], { type: "text/plain" });
+          const text = await res.text();
+          const blob = new Blob([text], { type: "text/plain" });
           const url = URL.createObjectURL(blob);
           window.open(url, "_blank");
         };
@@ -521,15 +518,14 @@ app.get("/api/logs/file/:name", auth, async (req, res) => {
     return res.status(404).send("file not found");
   }
 
-  res.type("text/plain");
-  res.send(fs.readFileSync(target, "utf8"));
+  res.type("text/plain").send(fs.readFileSync(target, "utf8"));
 });
 
 app.post("/api/start", auth, async (req, res) => {
   const r = await run(`sudo systemctl start ${COMFY_SERVICE_NAME}`);
   res.json({
     ok: r.ok,
-    message: r.ok ? "Comfy started" : r.stderr || "failed to start Comfy",
+    message: r.ok ? "ComfyUI started" : r.stderr || "failed",
   });
 });
 
@@ -537,7 +533,7 @@ app.post("/api/stop", auth, async (req, res) => {
   const r = await run(`sudo systemctl stop ${COMFY_SERVICE_NAME}`);
   res.json({
     ok: r.ok,
-    message: r.ok ? "Comfy stopped" : r.stderr || "failed to stop Comfy",
+    message: r.ok ? "ComfyUI stopped" : r.stderr || "failed",
   });
 });
 
@@ -545,7 +541,7 @@ app.post("/api/restart", auth, async (req, res) => {
   const r = await run(`sudo systemctl restart ${COMFY_SERVICE_NAME}`);
   res.json({
     ok: r.ok,
-    message: r.ok ? "Comfy restarted" : r.stderr || "failed to restart Comfy",
+    message: r.ok ? "ComfyUI restarted" : r.stderr || "failed",
   });
 });
 
@@ -555,7 +551,7 @@ app.post("/api/clear-logs", auth, async (req, res) => {
     fs.writeFileSync(ERROR_LOG_FILE, "");
     res.json({ ok: true, message: "Logs cleared" });
   } catch (e) {
-    res.json({ ok: false, message: "Failed to clear logs: " + e.message });
+    res.status(500).json({ ok: false, message: e.message });
   }
 });
 
@@ -582,32 +578,19 @@ app.post("/api/archive-logs", auth, async (req, res) => {
 
     res.json({ ok: true, message: "Logs archived" });
   } catch (e) {
-    res.json({ ok: false, message: "Failed to archive logs: " + e.message });
+    res.status(500).json({ ok: false, message: e.message });
   }
 });
 
 app.post("/api/update", auth, async (req, res) => {
-  const scriptPath = path.join(__dirname, "..", "scripts", "update-comfyui.sh");
-
-  if (!fs.existsSync(scriptPath)) {
-    return res.json({ ok: false, message: "update-comfyui.sh not found" });
-  }
-
-  // Roda em background — não espera terminar
-  exec(`bash "${scriptPath}"`, (err, stdout, stderr) => {
-    if (err) {
-      console.error("[update] failed:", stderr);
-    } else {
-      console.log("[update] done:", stdout);
-    }
-  });
-
+  const script = path.join(__dirname, "..", "scripts", "update-comfyui.sh");
+  const r = await run(`bash "${script}"`);
   res.json({
-    ok: true,
-    message: "Update started. ComfyUI will restart when done.",
+    ok: r.ok,
+    message: r.ok ? "ComfyUI updated" : r.stderr || r.stdout || "update failed",
   });
 });
 
 app.listen(PANEL_PORT, "0.0.0.0", () => {
-  console.log(`Panel running on port ${PANEL_PORT}`);
+  console.log(`Comfy panel running on http://0.0.0.0:${PANEL_PORT}`);
 });

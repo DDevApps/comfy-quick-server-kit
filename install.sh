@@ -1,14 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PANEL_DIR="$PROJECT_DIR/panel"
 ENV_FILE="$PROJECT_DIR/.env"
 ENV_EXAMPLE="$PROJECT_DIR/.env.example"
 SERVICE_TEMPLATE="$PROJECT_DIR/templates/comfyui.service.template"
-COMFY_SERVICE_NAME="${COMFY_SERVICE_NAME:-comfyui}"
-SERVICE_FILE="/etc/systemd/system/${COMFY_SERVICE_NAME}.service"
 
 echo "== Comfy Quick Server Kit Installer =="
 
@@ -19,26 +17,35 @@ if [[ ! -f "$ENV_FILE" ]]; then
 
   read -rp "Linux username: " USER_NAME
   read -rp "Conda environment name [comfy]: " CONDA_ENV
-  CONDA_ENV=${CONDA_ENV:-comfy}
+  CONDA_ENV="${CONDA_ENV:-comfy}"
+
   read -rp "conda.sh path: " CONDA_SH
+
   read -rp "ComfyUI port [8188]: " COMFY_PORT
-  COMFY_PORT=${COMFY_PORT:-8188}
+  COMFY_PORT="${COMFY_PORT:-8188}"
+
   read -rp "Panel port [3001]: " PANEL_PORT
-  PANEL_PORT=${PANEL_PORT:-3001}
+  PANEL_PORT="${PANEL_PORT:-3001}"
+
   read -rp "Panel token: " PANEL_TOKEN
+
   read -rp "Log directory [/home/$USER_NAME/logs]: " LOG_DIR
-  LOG_DIR=${LOG_DIR:-/home/$USER_NAME/logs}
-  read -rp "Extra ComfyUI args [--listen --lowvram --cache-none --reserve-vram 6 --preview-method none]: " COMFY_ARGS
-  COMFY_ARGS=${COMFY_ARGS:---listen --lowvram --cache-none --reserve-vram 6 --preview-method none}
+  LOG_DIR="${LOG_DIR:-/home/$USER_NAME/logs}"
+
+  read -rp "Extra ComfyUI args [--listen 0.0.0.0 --lowvram --cache-none --reserve-vram 6 --preview-method none]: " COMFY_ARGS
+  COMFY_ARGS="${COMFY_ARGS:---listen 0.0.0.0 --lowvram --cache-none --reserve-vram 6 --preview-method none}"
+
+  read -rp "Comfy service name [comfyui]: " COMFY_SERVICE_NAME
+  COMFY_SERVICE_NAME="${COMFY_SERVICE_NAME:-comfyui}"
 
   echo
   echo "Do you already have ComfyUI installed?"
   select COMFY_CHOICE in "Yes, I have it installed" "No, install it for me"; do
-    case $COMFY_CHOICE in
+    case "${COMFY_CHOICE}" in
       "Yes, I have it installed")
         read -rp "ComfyUI path: " COMFY_PATH
         while [[ ! -d "$COMFY_PATH" ]]; do
-          echo "  Directory not found: $COMFY_PATH"
+          echo "Directory not found: $COMFY_PATH"
           read -rp "ComfyUI path: " COMFY_PATH
         done
         INSTALL_COMFYUI=false
@@ -46,14 +53,13 @@ if [[ ! -f "$ENV_FILE" ]]; then
         ;;
       "No, install it for me")
         read -rp "Where to install ComfyUI [/home/$USER_NAME/ComfyUI]: " COMFY_PATH
-        COMFY_PATH=${COMFY_PATH:-/home/$USER_NAME/ComfyUI}
+        COMFY_PATH="${COMFY_PATH:-/home/$USER_NAME/ComfyUI}"
         INSTALL_COMFYUI=true
         break
         ;;
     esac
   done
 
-  # Notification (optional)
   echo
   echo "Notification setup (press Enter to skip):"
   read -rp "  Telegram bot token: " TELEGRAM_BOT_TOKEN
@@ -61,19 +67,19 @@ if [[ ! -f "$ENV_FILE" ]]; then
   read -rp "  Discord webhook URL: " DISCORD_WEBHOOK_URL
 
   cat > "$ENV_FILE" <<EOF
-USER_NAME=$USER_NAME
-COMFY_PATH=$COMFY_PATH
-CONDA_SH=$CONDA_SH
-CONDA_ENV=$CONDA_ENV
-COMFY_PORT=$COMFY_PORT
-PANEL_PORT=$PANEL_PORT
-PANEL_TOKEN=$PANEL_TOKEN
-LOG_DIR=$LOG_DIR
-COMFY_ARGS=$COMFY_ARGS
-COMFY_SERVICE_NAME=$COMFY_SERVICE_NAME
-TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
-TELEGRAM_CHAT_ID=$TELEGRAM_CHAT_ID
-DISCORD_WEBHOOK_URL=$DISCORD_WEBHOOK_URL
+USER_NAME="$USER_NAME"
+COMFY_PATH="$COMFY_PATH"
+CONDA_SH="$CONDA_SH"
+CONDA_ENV="$CONDA_ENV"
+COMFY_PORT="$COMFY_PORT"
+PANEL_PORT="$PANEL_PORT"
+PANEL_TOKEN="$PANEL_TOKEN"
+LOG_DIR="$LOG_DIR"
+COMFY_ARGS="$COMFY_ARGS"
+COMFY_SERVICE_NAME="$COMFY_SERVICE_NAME"
+TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN"
+TELEGRAM_CHAT_ID="$TELEGRAM_CHAT_ID"
+DISCORD_WEBHOOK_URL="$DISCORD_WEBHOOK_URL"
 EOF
 
   echo
@@ -84,7 +90,18 @@ set -a
 source "$ENV_FILE"
 set +a
 
-# Instalar ComfyUI se necessário
+: "${USER_NAME:?Missing USER_NAME in .env}"
+: "${COMFY_PATH:?Missing COMFY_PATH in .env}"
+: "${CONDA_SH:?Missing CONDA_SH in .env}"
+: "${CONDA_ENV:?Missing CONDA_ENV in .env}"
+: "${COMFY_PORT:?Missing COMFY_PORT in .env}"
+: "${PANEL_PORT:?Missing PANEL_PORT in .env}"
+: "${PANEL_TOKEN:?Missing PANEL_TOKEN in .env}"
+: "${LOG_DIR:?Missing LOG_DIR in .env}"
+
+COMFY_SERVICE_NAME="${COMFY_SERVICE_NAME:-comfyui}"
+SERVICE_FILE="/etc/systemd/system/${COMFY_SERVICE_NAME}.service"
+
 if [[ "${INSTALL_COMFYUI:-false}" == "true" ]]; then
   echo
   echo "Installing ComfyUI..."
@@ -99,6 +116,7 @@ echo "CONDA_ENV=$CONDA_ENV"
 echo "COMFY_PORT=$COMFY_PORT"
 echo "PANEL_PORT=$PANEL_PORT"
 echo "LOG_DIR=$LOG_DIR"
+echo "COMFY_SERVICE_NAME=$COMFY_SERVICE_NAME"
 echo
 
 mkdir -p "$LOG_DIR"
@@ -127,7 +145,7 @@ npm install
 cd "$PROJECT_DIR"
 
 echo
-echo "Generating comfyui.service..."
+echo "Generating ${COMFY_SERVICE_NAME}.service..."
 TMP_SERVICE="$(mktemp)"
 cp "$SERVICE_TEMPLATE" "$TMP_SERVICE"
 
@@ -138,7 +156,8 @@ sed -i "s|{{CONDA_ENV}}|$CONDA_ENV|g" "$TMP_SERVICE"
 sed -i "s|{{COMFY_PORT}}|$COMFY_PORT|g" "$TMP_SERVICE"
 sed -i "s|{{LOG_DIR}}|$LOG_DIR|g" "$TMP_SERVICE"
 sed -i "s|{{COMFY_ARGS}}|$COMFY_ARGS|g" "$TMP_SERVICE"
-sed -i "s|{{PROJECT_ROOT}}|$PROJECT_DIR|g" "$TMP_SERVICE" 
+sed -i "s|{{PROJECT_ROOT}}|$PROJECT_DIR|g" "$TMP_SERVICE"
+sed -i "s|{{COMFY_SERVICE_NAME}}|$COMFY_SERVICE_NAME|g" "$TMP_SERVICE"
 
 sudo cp "$TMP_SERVICE" "$SERVICE_FILE"
 rm -f "$TMP_SERVICE"
@@ -156,7 +175,7 @@ echo
 echo "Starting panel with PM2..."
 cd "$PANEL_DIR"
 CONFIG_PATH="$ENV_FILE" pm2 start server.js --name comfy-panel --update-env || true
-pm2 restart comfy-panel --update-env || true
+CONFIG_PATH="$ENV_FILE" pm2 restart comfy-panel --update-env || true
 pm2 save
 cd "$PROJECT_DIR"
 
