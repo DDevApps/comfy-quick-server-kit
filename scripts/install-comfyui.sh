@@ -1,8 +1,29 @@
 #!/usr/bin/env bash
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="$ROOT_DIR/.env"
+
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  source "$ENV_FILE"
+  set +a
+else
+  echo "[ERROR] .env file not found"
+  exit 1
+fi
+
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${PROJECT_ROOT}/.env"
+
+accept_conda_tos() {
+  if command -v conda >/dev/null 2>&1; then
+    echo "[INFO] Accepting Conda Terms of Service..."
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
+  fi
+}
 
 [[ -f "${ENV_FILE}" ]] || {
   echo "[ERROR] .env not found at ${ENV_FILE}"

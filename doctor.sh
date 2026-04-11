@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="$ROOT_DIR/.env"
+
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  source "$ENV_FILE"
+  set +a
+else
+  echo "[ERROR] .env file not found"
+  exit 1
+fi
 set -euo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/scripts/helpers.sh"
@@ -24,6 +35,11 @@ check_fail() {
   echo "[FAIL] $1"
   fail_count=$((fail_count + 1))
 }
+
+if command -v conda >/dev/null 2>&1; then
+  echo "[CHECK] Conda detected"
+  conda info >/dev/null 2>&1 || echo "[WARN] Conda may not be initialized properly"
+fi
 
 command -v node >/dev/null 2>&1 && check_ok "node found" || check_fail "node missing"
 command -v npm >/dev/null 2>&1 && check_ok "npm found" || check_fail "npm missing"

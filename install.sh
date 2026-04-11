@@ -10,6 +10,17 @@ SERVICE_TEMPLATE="$PROJECT_DIR/templates/comfyui.service.template"
 
 echo "== Comfy Quick Server Kit Installer =="
 
+on_error() {
+  echo ""
+  echo "[ERROR] Installation failed."
+  echo "[INFO] Running reset..."
+  bash reset.sh || true
+  echo "[INFO] Fix the issue and run install.sh again."
+  exit 1
+}
+
+trap 'on_error' ERR
+
 if [[ ! -f "$ENV_FILE" ]]; then
   echo
   echo "No .env file found. Creating one now."
