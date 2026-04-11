@@ -32,26 +32,26 @@ if [[ ! -f "$ENV_FILE" ]]; then
   echo
 
 
-while [[ -z "${USER_NAME// }" ]]; do
-  echo "[ERROR] Linux username cannot be empty."
-  read -rp "Linux username: " USER_NAME
-done
+  while [[ -z "${USER_NAME// }" ]]; do
+    echo "[ERROR] Linux username cannot be empty."
+    read -rp "Linux username: " USER_NAME
+  done
   read -rp "Conda environment name [comfy]: " CONDA_ENV
   CONDA_ENV="${CONDA_ENV:-comfy}"
 
   read -rp "conda.sh path (leave empty to auto-detect or install later): " CONDA_SH
 
-while ! validate_port "$COMFY_PORT"; do
-  echo "[ERROR] Invalid ComfyUI port. Use a number between 1 and 65535."
-  read -rp "ComfyUI port [8188]: " COMFY_PORT
-  COMFY_PORT="${COMFY_PORT:-8188}"
-done
+  while ! validate_port "$COMFY_PORT"; do
+    echo "[ERROR] Invalid ComfyUI port. Use a number between 1 and 65535."
+    read -rp "ComfyUI port [8188]: " COMFY_PORT
+    COMFY_PORT="${COMFY_PORT:-8188}"
+  done
 
-while ! validate_port "$PANEL_PORT"; do
-  echo "[ERROR] Invalid panel port. Use a number between 1 and 65535."
-  read -rp "Panel port [3001]: " PANEL_PORT
-  PANEL_PORT="${PANEL_PORT:-3001}"
-done
+  while ! validate_port "$PANEL_PORT"; do
+    echo "[ERROR] Invalid panel port. Use a number between 1 and 65535."
+    read -rp "Panel port [3001]: " PANEL_PORT
+    PANEL_PORT="${PANEL_PORT:-3001}"
+  done
 
   echo
 echo "Panel access token"
