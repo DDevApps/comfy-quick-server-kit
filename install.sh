@@ -19,7 +19,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
   read -rp "Conda environment name [comfy]: " CONDA_ENV
   CONDA_ENV="${CONDA_ENV:-comfy}"
 
-  read -rp "conda.sh path: " CONDA_SH
+  read -rp "conda.sh path (leave empty to auto-detect or install later): " CONDA_SH
 
   read -rp "ComfyUI port [8188]: " COMFY_PORT
   COMFY_PORT="${COMFY_PORT:-8188}"
@@ -92,7 +92,6 @@ set +a
 
 : "${USER_NAME:?Missing USER_NAME in .env}"
 : "${COMFY_PATH:?Missing COMFY_PATH in .env}"
-: "${CONDA_SH:?Missing CONDA_SH in .env}"
 : "${CONDA_ENV:?Missing CONDA_ENV in .env}"
 : "${COMFY_PORT:?Missing COMFY_PORT in .env}"
 : "${PANEL_PORT:?Missing PANEL_PORT in .env}"
@@ -107,6 +106,12 @@ if [[ "${INSTALL_COMFYUI:-false}" == "true" ]]; then
   echo "Installing ComfyUI..."
   bash "$PROJECT_DIR/scripts/install-comfyui.sh"
 fi
+
+set -a
+source "$ENV_FILE"
+set +a
+
+: "${CONDA_SH:?Missing CONDA_SH in .env after ComfyUI install}"
 
 echo
 echo "Loaded configuration:"
