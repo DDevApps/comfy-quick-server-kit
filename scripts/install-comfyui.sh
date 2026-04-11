@@ -19,7 +19,7 @@ ENV_FILE="${PROJECT_ROOT}/.env"
 
 accept_conda_tos() {
   if command -v conda >/dev/null 2>&1; then
-    echo "[INFO] Accepting Conda Terms of Service..."
+    log "Accepting Conda Terms of Service if needed..."
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
   fi
@@ -55,6 +55,22 @@ install_miniconda() {
   local target_home="/home/${USER_NAME}"
   local installer="/tmp/miniconda.sh"
   local miniconda_dir="${target_home}/miniconda3"
+
+  if [[ -f "${miniconda_dir}/etc/profile.d/conda.sh" ]]; then
+    log "Existing Miniconda detected at ${miniconda_dir}. Reusing it."
+    CONDA_SH="${miniconda_dir}/etc/profile.d/conda.sh"
+    return
+  fi
+
+  if [[ -d "${miniconda_dir}" ]]; then
+    warn "Directory ${miniconda_dir} already exists but does not look like a valid Miniconda install."
+    read -r -p "Remove it and install Miniconda again? [y/N] " answer
+    if [[ "${answer}" =~ ^[Yy]$ ]]; then
+      rm -rf "${miniconda_dir}"
+    else
+      die "Cannot continue with an invalid existing Miniconda directory."
+    fi
+  fi
 
   log "Installing Miniconda for ${USER_NAME}..."
   wget -O "${installer}" https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -118,6 +134,8 @@ clone_comfyui() {
 
 setup_conda_env() {
   source "${CONDA_SH}"
+
+  accept_conda_tos
 
   if conda env list | awk '{print $1}' | grep -qx "${CONDA_ENV}"; then
     log "Conda environment '${CONDA_ENV}' already exists."

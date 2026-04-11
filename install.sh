@@ -21,24 +21,74 @@ on_error() {
 
 trap 'on_error' ERR
 
+validate_port() {
+  local port="$1"
+  [[ "$port" =~ ^[0-9]+$ ]] && (( port >= 1 && port <= 65535 ))
+}
+
 if [[ ! -f "$ENV_FILE" ]]; then
   echo
   echo "No .env file found. Creating one now."
   echo
 
+
+while [[ -z "${USER_NAME// }" ]]; do
+  echo "[ERROR] Linux username cannot be empty."
   read -rp "Linux username: " USER_NAME
+done
   read -rp "Conda environment name [comfy]: " CONDA_ENV
   CONDA_ENV="${CONDA_ENV:-comfy}"
 
   read -rp "conda.sh path (leave empty to auto-detect or install later): " CONDA_SH
 
+while ! validate_port "$COMFY_PORT"; do
+  echo "[ERROR] Invalid ComfyUI port. Use a number between 1 and 65535."
   read -rp "ComfyUI port [8188]: " COMFY_PORT
   COMFY_PORT="${COMFY_PORT:-8188}"
+done
 
+while ! validate_port "$PANEL_PORT"; do
+  echo "[ERROR] Invalid panel port. Use a number between 1 and 65535."
   read -rp "Panel port [3001]: " PANEL_PORT
   PANEL_PORT="${PANEL_PORT:-3001}"
+done
 
-  read -rp "Panel token: " PANEL_TOKEN
+  echo
+echo "Panel access token"
+echo "This token protects the web panel."
+echo "Choose a strong secret, like a password."
+echo "Recommended: at least 12 characters with letters and numbers."
+echo "Example: myPanelSecure2026"
+echo
+
+while true; do
+  read -rsp "Panel token: " PANEL_TOKEN
+  echo
+  PANEL_TOKEN="${PANEL_TOKEN//[$'\r\n']}"
+  
+  if [[ -z "$PANEL_TOKEN" ]]; then
+    echo "[ERROR] Panel token cannot be empty."
+    continue
+  fi
+
+  if [[ ${#PANEL_TOKEN} -lt 8 ]]; then
+    echo "[WARN] Token is too short. Use at least 8 characters."
+    read -rp "Use it anyway? [y/N]: " USE_WEAK_TOKEN
+    if [[ ! "$USE_WEAK_TOKEN" =~ ^[Yy]$ ]]; then
+      continue
+    fi
+  fi
+
+  read -rsp "Confirm panel token: " PANEL_TOKEN_CONFIRM
+  echo
+
+  if [[ "$PANEL_TOKEN" != "$PANEL_TOKEN_CONFIRM" ]]; then
+    echo "[ERROR] Tokens do not match. Try again."
+    continue
+  fi
+
+  break
+done
 
   read -rp "Log directory [/home/$USER_NAME/logs]: " LOG_DIR
   LOG_DIR="${LOG_DIR:-/home/$USER_NAME/logs}"
@@ -190,8 +240,18 @@ sudo systemctl restart "$COMFY_SERVICE_NAME"
 echo
 echo "Starting panel with PM2..."
 cd "$PANEL_DIR"
-CONFIG_PATH="$ENV_FILE" pm2 start server.js --name comfy-panel --update-env || true
-CONFIG_PATH="$ENV_FILE" pm2 restart comfy-panel --update-env || true
+echo
+echo "Starting panel with PM2..."
+cd "$PANEL_DIR"
+
+if pm2 describe comfy-panel >/dev/null 2>&1; then
+  CONFIG_PATH="$ENV_FILE" pm2 restart comfy-panel --update-env
+else
+  CONFIG_PATH="$ENV_FILE" pm2 start server.js --name comfy-panel --update-env
+fi
+
+pm2 save
+cd "$PROJECT_DIR"
 pm2 save
 cd "$PROJECT_DIR"
 
